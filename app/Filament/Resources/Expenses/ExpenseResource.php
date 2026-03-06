@@ -9,6 +9,7 @@ use App\Filament\Resources\Expenses\Pages\ViewExpense;
 use App\Filament\Resources\Expenses\Schemas\ExpenseForm;
 use App\Filament\Resources\Expenses\Schemas\ExpenseInfolist;
 use App\Filament\Resources\Expenses\Tables\ExpensesTable;
+use App\Filament\Resources\Expenses\Widgets\ExpenseStatsOverview;
 use App\Models\Expense;
 use BackedEnum;
 use Filament\Resources\Resource;
