@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\jobs\CleanupDraftExpensesJob;
 use Carbon\CarbonImmutable;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -24,6 +26,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+
+            $schedule->command('app:weekly-summary')
+                ->fridays()
+                ->at('17:00');
+
+            $schedule->command('app:generate-reports')
+                ->monthlyOn(1, '02:00');
+
+            $schedule->job(CleanupDraftExpensesJob::class)
+                ->daily()
+                ->at('01:00');
+        });
     }
 
     /**
