@@ -26,6 +26,7 @@ class Expense extends Model implements HasMedia
         'amount_taxe',
         'site_reference',
         'status',
+        'odometer',
     ];
 
     public function user(): BelongsTo
