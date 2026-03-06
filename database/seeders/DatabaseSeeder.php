@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +16,33 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Création des catégories métier BTP
+        $categories = [
+            ['name' => 'Restauration', 'icon' => 'heroicon-o-utensils'],
+            ['name' => 'Carburant', 'icon' => 'heroicon-o-truck'],
+            ['name' => 'Outillage urgent', 'icon' => 'heroicon-o-wrench'],
+            ['name' => 'Péage / Parking', 'icon' => 'heroicon-o-ticket'],
+            ['name' => 'Hébergement', 'icon' => 'heroicon-o-home'],
+        ];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        foreach ($categories as $cat) {
+            Category::create([
+                'name' => $cat['name'],
+                'slug' => Str::slug($cat['name']),
+                'icon' => $cat['icon'],
+                'is_active' => true,
+            ]);
+        }
+
+        $adminRole = Role::create(['name' => 'admin']);
+        $salaryRole = Role::create(['name' => 'salary']);
+
+        // Administrateur (Gestion et validation)
+        $admin = User::factory()->create([
+            'name' => 'Admin BatiStack',
+            'email' => 'admin@admin.com',
+            'password' => bcrypt('admin'),
         ]);
+        $admin->assignRole($adminRole);
     }
 }
