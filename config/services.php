@@ -40,4 +40,8 @@ return [
         'npm_path' => env('BROWSERSHOT_NPM_PATH'),
     ],
 
+    'google' => [
+        'api_key' => env('GOOGLE_API_KEY'),
+    ],
+
 ];
