@@ -10,12 +10,6 @@ use Filament\Resources\Pages\EditRecord;
 class EditVehicle extends EditRecord
 {
     protected static string $resource = VehicleResource::class;
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            ViewAction::make(),
-            DeleteAction::make(),
-        ];
-    }
+    protected static ?string $title = 'Modifier le vehicule';
+    protected static ?string $breadcrumb = 'Modifier le vehicule';
 }
