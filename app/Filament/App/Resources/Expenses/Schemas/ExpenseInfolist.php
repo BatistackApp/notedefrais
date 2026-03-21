@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Expenses\Schemas;
+namespace App\Filament\App\Resources\Expenses\Schemas;
 
 use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
 use Filament\Infolists\Components\TextEntry;
