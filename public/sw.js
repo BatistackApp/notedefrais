@@ -1,6 +1,7 @@
 const CACHE_NAME = 'frais-v1';
 const ASSETS_TO_CACHE = [
-    '/',
+    '/app',
+    '/admin',
     '/css/filament/filament/app.css',
     '/js/filament/filament/app.js',
     '/manifest.json',
@@ -8,21 +9,16 @@ const ASSETS_TO_CACHE = [
     '/apple-touch-icon.png'
 ];
 
-/**
- * Installation du Service Worker : Mise en cache des ressources critiques
- */
+// Installation : Mise en cache des ressources statiques de Filament
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
-    self.skipWaiting();
 });
 
-/**
- * Activation : Nettoyage des anciens caches
- */
+// Activation : Nettoyage des anciens caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -37,26 +33,30 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-/**
- * Stratégie : Network First (Priorité Réseau) avec Fallback Cache
- * Idéal pour une application de gestion de paye où la donnée doit être fraîche.
- */
+// Stratégie de Fetch : "Stale-While-Revalidate" pour les assets, "Network First" pour le reste
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                // Si on a du réseau, on met à jour le cache
-                if (event.request.method === 'GET' && response.status === 200) {
-                    const responseClone = response.clone();
+    const url = new URL(event.request.url);
+
+    // Pour les assets statiques (CSS, JS, Polices), on sert le cache et on met à jour en arrière-plan
+    if (ASSETS_TO_CACHE.some(asset => url.pathname.startsWith(asset)) || url.pathname.endsWith('.woff2')) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
                     caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
+                        cache.put(event.request, networkResponse.clone());
                     });
-                }
-                return response;
+                    return networkResponse;
+                });
+                return cachedResponse || fetchPromise;
             })
-            .catch(() => {
-                // En cas de perte de réseau, on pioche dans le cache
-                return caches.match(event.request);
-            })
+        );
+        return;
+    }
+
+    // Par défaut : Priorité réseau pour éviter les problèmes avec Livewire et Filament
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
+        })
     );
 });
