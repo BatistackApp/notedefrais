@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\ExpenseStatus;
 use App\Models\Expense;
 use App\Services\VehicleService;
 
@@ -14,6 +15,9 @@ class ExpenseObserver
     public function created(Expense $expense): void
     {
         $this->handleVehicleOdometer($expense);
+        $expense->updateQuietly([
+            'status' => ExpenseStatus::PENDING,
+        ]);
     }
 
     public function updated(Expense $expense): void
