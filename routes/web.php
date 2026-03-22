@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\ErrorHandlerToJiraService;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');

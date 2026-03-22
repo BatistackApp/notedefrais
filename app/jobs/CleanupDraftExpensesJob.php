@@ -4,6 +4,7 @@ namespace App\jobs;
 
 use App\Enums\ExpenseStatus;
 use App\Models\Expense;
+use App\Services\ErrorHandlerToJiraService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -27,5 +28,17 @@ class CleanupDraftExpensesJob implements ShouldQueue
         if ($deletedCount > 0) {
             Log::info("Nettoyage automatique effectué. {$deletedCount} brouillons supprimés.");
         }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function failed(\Throwable $exception): void
+    {
+        app(ErrorHandlerToJiraService::class)->handle(
+            exception: $exception,
+            summary: '[Job Failed]: Erreur lors du processus automatique',
+            description: 'Le job CleanupDraftExpenseJob à échoué'
+        );
     }
 }

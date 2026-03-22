@@ -4,6 +4,7 @@ namespace App\jobs;
 
 use App\Enums\ExpenseStatus;
 use App\Models\Expense;
+use App\Services\ErrorHandlerToJiraService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -38,5 +39,17 @@ class CheckDuplicateExpensesJob implements ShouldQueue
 
             Log::warning("Doublon potentiel détecté pour la dépense #{$this->expense->id} (conflit avec #{$duplicate->id})");
         }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function failed(\Throwable $exception): void
+    {
+        app(ErrorHandlerToJiraService::class)->handle(
+            exception: $exception,
+            summary: '[Job Failed]: Erreur lors du processus automatique',
+            description: 'Le job CheckDuplicateExpenseJob à échoué'
+        );
     }
 }

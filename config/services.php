@@ -44,4 +44,8 @@ return [
         'api_key' => env('GOOGLE_API_KEY'),
     ],
 
+    'n8n' => [
+        'webhook_jira_url' => env('N8N_WEBHOOK_JIRA_URL'),
+    ],
+
 ];

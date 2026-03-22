@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\jobs\CleanupDraftExpensesJob;
+use App\jobs\DetectOrphanTransactionsJob;
+use App\jobs\ProcessAutoReconciliationJob;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Date;
@@ -39,6 +41,12 @@ class AppServiceProvider extends ServiceProvider
             $schedule->job(CleanupDraftExpensesJob::class)
                 ->daily()
                 ->at('01:00');
+
+            $schedule->job(new ProcessAutoReconciliationJob)
+                ->dailyAt('02:00');
+
+            $schedule->job(new DetectOrphanTransactionsJob)
+                ->weeklyOn(1, '08:00');
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Enums\ExpenseStatus;
+use App\jobs\ProcessAutoReconciliationJob;
 use App\Models\Expense;
 use App\Services\VehicleService;
 
@@ -23,6 +24,13 @@ class ExpenseObserver
     public function updated(Expense $expense): void
     {
         $this->handleVehicleOdometer($expense);
+    }
+
+    public function saved(Expense $expense): void
+    {
+        if ($expense->isDirty('status') && $expense->status === ExpenseStatus::PENDING->value) {
+            ProcessAutoReconciliationJob::dispatch();
+        }
     }
 
     /**
