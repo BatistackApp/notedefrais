@@ -2,8 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\ReconciliationStatus;
+use App\Models\BankAccount;
 use App\Models\BankTransaction;
-use App\Models\Expense;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
@@ -14,16 +15,13 @@ class BankTransactionFactory extends Factory
     public function definition(): array
     {
         return [
-            'external_id' => $this->faker->word(),
-            'transaction_date' => Carbon::now(),
-            'label' => $this->faker->word(),
-            'amount_total' => $this->faker->randomFloat(),
-            'currency' => $this->faker->word(),
-            'is_reconciled' => $this->faker->boolean(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-
-            'expense_id' => Expense::factory(),
+            'bank_account_id' => BankAccount::factory(),
+            'external_id' => $this->faker->uuid(),
+            'transaction_date' => $this->faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d'),
+            'vendor_name' => $this->faker->company(),
+            'amount' => $this->faker->randomFloat(2, -500, -5), // Débits (négatifs)
+            'currency' => 'EUR',
+            'reconciliation_status' => ReconciliationStatus::Pending,
         ];
     }
 }

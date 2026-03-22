@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ExpenseStatus;
+use App\Enums\ReconciliationStatus;
 use App\Observers\ExpenseObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,6 +32,9 @@ class Expense extends Model implements HasMedia
         'site_reference',
         'status',
         'odometer',
+        'bank_transaction_id',
+        'reconciliation_status',
+        'bank_transaction_id',
     ];
 
     public function user(): BelongsTo
@@ -48,9 +52,9 @@ class Expense extends Model implements HasMedia
         return $this->belongsTo(Vehicle::class);
     }
 
-    public function transactions(): HasOne
+    public function bankTransaction(): BelongsTo
     {
-        return $this->hasOne(BankTransaction::class, 'bank_transaction_id');
+        return $this->belongsTo(BankTransaction::class);
     }
 
     protected function casts(): array
@@ -61,6 +65,7 @@ class Expense extends Model implements HasMedia
             'amount_total' => 'decimal:2',
             'amount_taxe' => 'decimal:2',
             'tax_rate' => 'decimal:2',
+            'reconciliation_status' => ReconciliationStatus::class,
         ];
     }
 

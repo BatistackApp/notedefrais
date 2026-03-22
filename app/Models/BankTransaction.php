@@ -2,34 +2,42 @@
 
 namespace App\Models;
 
+use App\Enums\ReconciliationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class BankTransaction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'bank_account_id',
         'external_id',
         'transaction_date',
-        'label',
-        'amount_total',
+        'vendor_name',
+        'amount',
         'currency',
-        'is_reconciled',
-        'expense_id',
+        'reconciliation_status',
     ];
 
-    public function expense(): BelongsTo
+    public function bankAccount(): BelongsTo
     {
-        return $this->belongsTo(Expense::class);
+        return $this->belongsTo(BankAccount::class);
+    }
+
+    public function expense(): HasOne
+    {
+        return $this->hasOne(Expense::class);
     }
 
     protected function casts(): array
     {
         return [
             'transaction_date' => 'date',
-            'is_reconciled' => 'boolean',
+            'amount' => 'decimal:2',
+            'reconciliation_status' => ReconciliationStatus::class,
         ];
     }
 }
