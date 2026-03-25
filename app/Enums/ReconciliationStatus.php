@@ -24,6 +24,7 @@ enum ReconciliationStatus: string implements HasLabel, HasColor, HasIcon, HasDes
             self::Pending => 'primary',
             self::AutoReconciled, self::Disputed, self::Ignored => 'danger',
             self::ManualReconciled => 'warning',
+            default => 'null',
         };
     }
 
@@ -35,16 +36,17 @@ enum ReconciliationStatus: string implements HasLabel, HasColor, HasIcon, HasDes
             self::ManualReconciled => 'Rapprochée manuellement par un comptable',
             self::Ignored => 'Ligne ignorée (ex: frais bancaires internes)',
             self::Disputed => 'Litige (montant différent, suspicion de fraude)',
+            default => 'null',
         };
     }
 
     public function getIcon(): string|BackedEnum|Htmlable|null
     {
         return match ($this) {
-            self::Pending => Phosphor::Clock,
             self::AutoReconciled, self::ManualReconciled => Phosphor::CheckCircle,
             self::Disputed => Phosphor::Prohibit,
             self::Ignored => Phosphor::ProhibitInset,
+            default => Phosphor::Clock,
         };
     }
 
@@ -56,6 +58,7 @@ enum ReconciliationStatus: string implements HasLabel, HasColor, HasIcon, HasDes
             self::ManualReconciled => 'Rapprochement Manuel',
             self::Ignored => 'Ignoré',
             self::Disputed => 'Litige',
+            default => 'null',
         };
     }
 }

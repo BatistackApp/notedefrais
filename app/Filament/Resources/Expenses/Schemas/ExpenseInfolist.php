@@ -92,6 +92,8 @@ class ExpenseInfolist
                                             'alt' => 'Justificatif de dépense',
                                         ]),
                                 ]),
+
+
                         ])->columnSpan(['md' => 1]),
                     ]),
             ]);

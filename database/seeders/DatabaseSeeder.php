@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Str;
+use ToneGabes\Filament\Icons\Enums\Phosphor;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,11 +19,11 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Création des catégories métier BTP
         $categories = [
-            ['name' => 'Restauration', 'icon' => 'heroicon-o-utensils'],
-            ['name' => 'Carburant', 'icon' => 'heroicon-o-truck'],
-            ['name' => 'Outillage urgent', 'icon' => 'heroicon-o-wrench'],
-            ['name' => 'Péage / Parking', 'icon' => 'heroicon-o-ticket'],
-            ['name' => 'Hébergement', 'icon' => 'heroicon-o-home'],
+            ['name' => 'Restauration', 'icon' => Phosphor::ForkKnife->getLabel()],
+            ['name' => 'Carburant', 'icon' => Phosphor::Truck->getLabel()],
+            ['name' => 'Outillage urgent', 'icon' => Phosphor::Wrench->getLabel()],
+            ['name' => 'Péage / Parking', 'icon' => Phosphor::Ticket->getLabel()],
+            ['name' => 'Hébergement', 'icon' => Phosphor::Bed->getLabel()],
         ];
 
         foreach ($categories as $cat) {

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Expenses\Tables;
 
 use App\Enums\ExpenseStatus;
+use App\Enums\ReconciliationStatus;
 use App\Models\Expense;
 use App\Services\ExpenseService;
 use Filament\Actions\Action;
@@ -17,6 +18,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Enums\FontWeight;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -63,6 +65,12 @@ class ExpensesTable
                 TextColumn::make('status')
                     ->label('Statut')
                     ->badge(),
+
+                IconColumn::make('reconciliation_status')
+                    ->label('Banque')
+                    ->icon(fn ($state) => $state->getIcon())
+                    ->color(fn ($state) => $state->getColor())
+                    ->tooltip(fn ($state): string => $state->getDescription()),
             ])
             ->filters([
                 SelectFilter::make('status')
