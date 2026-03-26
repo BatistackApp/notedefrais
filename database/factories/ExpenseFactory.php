@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\DigitalSealStatus;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\User;
@@ -31,5 +32,28 @@ class ExpenseFactory extends Factory
             'category_id' => Category::factory(),
             'vehicle_id' => Vehicle::factory(),
         ];
+    }
+
+    /**
+     * Indique que la note de frais est scellée numériquement.
+     */
+    public function sealed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'digital_seal_status' => DigitalSealStatus::Sealed,
+            'sealed_at' => now(),
+            'status' => 'submitted', // Une dépense scellée est forcément soumise
+        ]);
+    }
+
+    /**
+     * Indique que le fichier de la note de frais a été altéré (fraude/erreur).
+     */
+    public function compromised(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'digital_seal_status' => DigitalSealStatus::Compromised,
+            'sealed_at' => now()->subDays(2),
+        ]);
     }
 }

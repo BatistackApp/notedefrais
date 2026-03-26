@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DigitalSealStatus;
 use App\Enums\ExpenseStatus;
 use App\Enums\ReconciliationStatus;
 use App\Observers\ExpenseObserver;
@@ -66,6 +67,8 @@ class Expense extends Model implements HasMedia
             'amount_taxe' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'reconciliation_status' => ReconciliationStatus::class,
+            'digital_seal_status' => DigitalSealStatus::class,
+            'sealed_at' => 'datetime',
         ];
     }
 
