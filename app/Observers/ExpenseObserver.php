@@ -24,6 +24,10 @@ class ExpenseObserver
     public function updated(Expense $expense): void
     {
         $this->handleVehicleOdometer($expense);
+        // Si l'employé vient de soumettre la note de frais, on lance le scellement asynchrone
+        if ($expense->wasChanged('status') && $expense->status === 'submitted') {
+            SealExpenseAttachmentsJob::dispatch($expense);
+        }
     }
 
     public function saved(Expense $expense): void

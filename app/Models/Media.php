@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\MediaObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
 
+#[ObservedBy([MediaObserver::class])]
 class Media extends BaseMedia
 {
     /**
