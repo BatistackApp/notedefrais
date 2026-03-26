@@ -1,4 +1,4 @@
-const CACHE_NAME = 'frais-v2-0-1';
+const CACHE_NAME = 'frais-v1-0-1';
 const ASSETS_TO_CACHE = [
     '/',
     '/css/filament/filament/app.css',
@@ -8,16 +8,21 @@ const ASSETS_TO_CACHE = [
     '/apple-touch-icon.png'
 ];
 
-// Installation : Mise en cache des ressources statiques de Filament
+/**
+ * Installation du Service Worker : Mise en cache des ressources critiques
+ */
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS_TO_CACHE);
         })
     );
+    self.skipWaiting();
 });
 
-// Activation : Nettoyage des anciens caches
+/**
+ * Activation : Nettoyage des anciens caches
+ */
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -32,32 +37,26 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Stratégie de Fetch : "Stale-While-Revalidate" pour les assets, "Network First" pour le reste
+/**
+ * Stratégie : Network First (Priorité Réseau) avec Fallback Cache
+ * Idéal pour une application de gestion de paye où la donnée doit être fraîche.
+ */
 self.addEventListener('fetch', (event) => {
-    if (event.request.method !== 'GET') return;
-    const url = new URL(event.request.url);
-    if (url.pathname.includes('/livewire/')) return;
-
-    // Pour les assets statiques (CSS, JS, Polices), on sert le cache et on met à jour en arrière-plan
-    if (ASSETS_TO_CACHE.some(asset => url.pathname.startsWith(asset)) || url.pathname.endsWith('.woff2')) {
-        event.respondWith(
-            caches.match(event.request).then((cachedResponse) => {
-                const fetchPromise = fetch(event.request).then((networkResponse) => {
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, networkResponse.clone());
-                    });
-                    return networkResponse;
-                });
-                return cachedResponse || fetchPromise;
-            })
-        );
-        return;
-    }
-
-    // Par défaut : Priorité réseau pour éviter les problèmes avec Livewire et Filament
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
-        })
+        fetch(event.request)
+            .then((response) => {
+                // Si on a du réseau, on met à jour le cache
+                if (event.request.method === 'GET' && response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => {
+                // En cas de perte de réseau, on pioche dans le cache
+                return caches.match(event.request);
+            })
     );
 });
