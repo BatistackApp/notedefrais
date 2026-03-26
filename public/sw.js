@@ -42,21 +42,41 @@ self.addEventListener('activate', (event) => {
  * Idéal pour une application de gestion de paye où la donnée doit être fraîche.
  */
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                // Si on a du réseau, on met à jour le cache
-                if (event.request.method === 'GET' && response.status === 200) {
-                    const responseClone = response.clone();
+    if (event.request.method !== 'GET') return;
+
+    const url = new URL(event.request.url);
+
+    // CORRECTION ULTIME : On ignore TOUT ce qui est dynamique (Livewire + Pages Filament)
+    // Cela force le navigateur à toujours demander la page fraîche au serveur avec un nouveau CSRF.
+    if (
+        url.pathname.includes('livewire') ||
+        url.pathname.startsWith('/app') ||
+        url.pathname.startsWith('/admin') ||
+        url.pathname === '/'
+    ) {
+        return; // On ne fait rien, le navigateur et le serveur Laravel communiquent en direct
+    }
+
+    // Pour les assets statiques, on sert le cache
+    if (ASSETS_TO_CACHE.some(asset => url.pathname.startsWith(asset)) || url.pathname.endsWith('.woff2')) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
                     caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
+                        cache.put(event.request, networkResponse.clone());
                     });
-                }
-                return response;
+                    return networkResponse;
+                });
+                return cachedResponse || fetchPromise;
             })
-            .catch(() => {
-                // En cas de perte de réseau, on pioche dans le cache
-                return caches.match(event.request);
-            })
+        );
+        return;
+    }
+
+    // Par défaut : Priorité réseau
+    event.respondWith(
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
+        })
     );
 });
