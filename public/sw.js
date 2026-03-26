@@ -1,5 +1,6 @@
-const CACHE_NAME = 'frais-v2-0-0';
+const CACHE_NAME = 'frais-v2-0-1';
 const ASSETS_TO_CACHE = [
+    '/',
     '/css/filament/filament/app.css',
     '/js/filament/filament/app.js',
     '/manifest.json',
