@@ -2,6 +2,7 @@
 
 namespace App\Filament\App\Resources\Expenses\Tables;
 
+use App\Enums\DigitalSealStatus;
 use App\Enums\ExpenseStatus;
 use App\Models\Expense;
 use Filament\Actions\ActionGroup;
@@ -13,7 +14,6 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class ExpensesTable
@@ -47,17 +47,21 @@ class ExpensesTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make()
+                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed)
                         ->visible(fn (Expense $record): bool => in_array($record->status, [
                             ExpenseStatus::DRAFT,
                             ExpenseStatus::REJECTED,
                         ])),
-                ])
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
+                    ForceDeleteBulkAction::make()
+                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
+                    RestoreBulkAction::make()
+                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
                 ]),
             ]);
     }

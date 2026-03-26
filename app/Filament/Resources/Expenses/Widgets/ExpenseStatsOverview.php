@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Expenses\Widgets;
 
+use App\Enums\DigitalSealStatus;
 use App\Enums\ExpenseStatus;
 use App\Models\Expense;
 use Filament\Widgets\StatsOverviewWidget;
@@ -18,6 +19,8 @@ class ExpenseStatsOverview extends StatsOverviewWidget
             ->whereMonth('expensed_at', now()->month)
             ->whereYear('expensed_at', now()->year)
             ->sum('amount_total');
+
+        $compromisedCount = Expense::where('digital_seal_status', DigitalSealStatus::Compromised)->count();
 
         return [
             Stat::make('Total des dépenses', Expense::count())
@@ -43,6 +46,14 @@ class ExpenseStatsOverview extends StatsOverviewWidget
                 ->description('Dépenses validées ce mois-ci')
                 ->color('info')
                 ->icon('heroicon-m-banknotes'),
+
+            Stat::make('Alerte de Sécurité Majeure', $compromisedCount.' justificatif(s) compromis')
+                ->description('Des fichiers ont été altérés. La valeur probatoire est perdue.')
+                ->descriptionIcon('heroicon-m-exclamation-triangle')
+                ->color('danger')
+                ->extraAttributes([
+                    'class' => 'ring-2 ring-danger-500 bg-danger-50', // Visuel agressif pour attirer l'attention
+                ]),
         ];
     }
 }

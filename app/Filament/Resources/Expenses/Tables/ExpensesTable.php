@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\Expenses\Tables;
 
+use App\Enums\DigitalSealStatus;
 use App\Enums\ExpenseStatus;
-use App\Enums\ReconciliationStatus;
 use App\Models\Expense;
+use App\Services\DigitalSealService;
 use App\Services\ExpenseService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -71,6 +72,12 @@ class ExpensesTable
                     ->icon(fn ($state) => $state->getIcon())
                     ->color(fn ($state) => $state->getColor())
                     ->tooltip(fn ($state): string => $state->getDescription()),
+
+                IconColumn::make('digital_seal_status')
+                    ->label('Sceau Légal')
+                    ->icon(fn (DigitalSealStatus $state): string => $state->getIcon())
+                    ->color(fn ($state) => $state->getColor())
+                    ->tooltip(fn ($state): string => $state->getDescription()),
             ])
             ->filters([
                 SelectFilter::make('status')
@@ -89,6 +96,10 @@ class ExpensesTable
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when($data['from'], fn ($q, $date) => $q->whereDate('expensed_at', '>=', $date))
                         ->when($data['until'], fn ($q, $date) => $q->whereDate('expensed_at', '<=', $date))),
+
+                SelectFilter::make('digital_seal_status')
+                    ->label('Intégrité du document')
+                    ->options(DigitalSealStatus::class),
             ])
             ->recordActions([
                 ActionGroup::make([
@@ -118,6 +129,29 @@ class ExpensesTable
                             $service->reject($record, $data['reason']);
                             Notification::make()->title('Dépense refusée')->danger()->send();
                         }),
+
+                    Action::make('verify_integrity')
+                        ->label('Auditer')
+                        ->icon(Phosphor::Fingerprint)
+                        ->color('gray')
+                        ->visible(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed)
+                        ->action(function ($record, DigitalSealService $service) {
+                            $isValid = $service->verifyIntegrity($record);
+
+                            if ($isValid) {
+                                Notification::make()
+                                    ->title('Audit réussi')
+                                    ->body('L\'empreinte SHA-256 correspond au fichier original. L\'intégrité est garantie.')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Intégrité Compromise !')
+                                    ->body('Le fichier actuel a été modifié ou corrompu. L\'empreinte ne correspond plus.')
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
                 ]),
             ])
             ->toolbarActions([
@@ -125,6 +159,28 @@ class ExpensesTable
                     DeleteBulkAction::make(),
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
+                    Action::make('verify_integrity')
+                        ->label('Auditer')
+                        ->icon(Phosphor::Fingerprint)
+                        ->color('gray')
+                        ->visible(fn ($record) => empty($record->digital_seal_status) || $record->digital_seal_status === DigitalSealStatus::Sealed)
+                        ->action(function ($record, DigitalSealService $service) {
+                            $isValid = $service->verifyIntegrity($record);
+
+                            if ($isValid) {
+                                Notification::make()
+                                    ->title('Audit réussi')
+                                    ->body('L\'empreinte SHA-256 correspond au fichier original. L\'intégrité est garantie.')
+                                    ->success()
+                                    ->send();
+                            } else {
+                                Notification::make()
+                                    ->title('Intégrité Compromise !')
+                                    ->body('Le fichier actuel a été modifié ou corrompu. L\'empreinte ne correspond plus.')
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
                 ]),
             ]);
     }

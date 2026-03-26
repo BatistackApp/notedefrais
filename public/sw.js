@@ -1,7 +1,5 @@
-const CACHE_NAME = 'frais-v1';
+const CACHE_NAME = 'frais-v2-0-0';
 const ASSETS_TO_CACHE = [
-    '/app',
-    '/admin',
     '/css/filament/filament/app.css',
     '/js/filament/filament/app.js',
     '/manifest.json',
@@ -35,7 +33,9 @@ self.addEventListener('activate', (event) => {
 
 // Stratégie de Fetch : "Stale-While-Revalidate" pour les assets, "Network First" pour le reste
 self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET') return;
     const url = new URL(event.request.url);
+    if (url.pathname.includes('/livewire/')) return;
 
     // Pour les assets statiques (CSS, JS, Polices), on sert le cache et on met à jour en arrière-plan
     if (ASSETS_TO_CACHE.some(asset => url.pathname.startsWith(asset)) || url.pathname.endsWith('.woff2')) {

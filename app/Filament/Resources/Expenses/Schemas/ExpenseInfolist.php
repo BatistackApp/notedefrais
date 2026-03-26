@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Expenses\Schemas;
 
+use App\Enums\DigitalSealStatus;
 use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
@@ -93,6 +94,32 @@ class ExpenseInfolist
                                         ]),
                                 ]),
 
+                            Section::make('Archive à Valeur Probatoire (Zéro Papier)')
+                                ->description('Ces données garantissent l\'authenticité juridique du justificatif soumis par le collaborateur.')
+                                ->icon('heroicon-o-shield-check')
+                                ->schema([
+                                    TextEntry::make('sealed_at')
+                                        ->label('Horodatage du scellement')
+                                        ->dateTime('d/m/Y à H:i:s'),
+
+                                    TextEntry::make('digital_seal_status')
+                                        ->label('Statut de sécurité')
+                                        ->badge(),
+
+                                    // Récupération de l'empreinte stockée dans la MediaLibrary
+                                    TextEntry::make('hash_sha256')
+                                        ->label('Empreinte Numérique (SHA-256)')
+                                        ->state(function ($record) {
+                                            $media = $record->getFirstMedia('receipts');
+
+                                            return $media ? $media->getCustomProperty('original_file_hash', 'Aucune empreinte') : 'N/A';
+                                        })
+                                        ->copyable() // Permet au comptable de copier le hash pour l'expert-comptable
+                                        ->fontFamily('mono') // Police monospace pour mieux lire le hash
+                                        ->columnSpanFull(),
+                                ])
+                                ->visible(fn ($record) => $record->digital_seal_status !== DigitalSealStatus::Unsealed)
+                                ->columns(2),
 
                         ])->columnSpan(['md' => 1]),
                     ]),
