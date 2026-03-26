@@ -36,6 +36,8 @@ class Expense extends Model implements HasMedia
         'bank_transaction_id',
         'reconciliation_status',
         'bank_transaction_id',
+        'digital_seal_status',
+        'sealed_at',
     ];
 
     public function user(): BelongsTo
