@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\jobs\CleanupDraftExpensesJob;
 use App\jobs\DetectOrphanTransactionsJob;
 use App\jobs\ProcessAutoReconciliationJob;
+use App\jobs\SyncBridgeTransactionsJob;
 use App\jobs\VerifyAllDigitalSealsJob;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Scheduling\Schedule;
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
 
             $schedule->job(new VerifyAllDigitalSealsJob)
                 ->dailyAt('03:00');
+
+            $schedule->job(new SyncBridgeTransactionsJob)
+                ->dailyAt('04:00');
         });
     }
 
