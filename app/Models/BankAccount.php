@@ -15,12 +15,16 @@ class BankAccount extends Model
         'iban',
         'currency',
         'is_active',
+        'bridge_item_id',
+        'bridge_account_id',
+        'last_synced_at',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'last_synced_at' => 'datetime',
         ];
     }
 

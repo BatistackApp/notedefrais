@@ -48,4 +48,10 @@ return [
         'webhook_jira_url' => env('N8N_WEBHOOK_JIRA_URL'),
     ],
 
+    'bridge' => [
+        'client_id' => env('BRIDGE_CLIENT_ID'),
+        'client_secret' => env('BRIDGE_CLIENT_SECRET'),
+        'redirect_uri' => env('BRIDGE_CALLBACK_URL'),
+        'api_url' => env('BRIDGE_API_URL', 'https://api.bridgeapi.io/v3/'),
+    ],
 ];
