@@ -70,10 +70,10 @@ class BankTransactionsTable
                                 $maxAmount = $targetAmount * 1.1;
 
                                 return Expense::where('reconciliation_status', ReconciliationStatus::Pending->value)
-                                    ->whereBetween('amount', [$minAmount, $maxAmount])
+                                    ->whereBetween('amount_total', [$minAmount, $maxAmount])
                                     ->get()
                                     ->mapWithKeys(function ($expense) {
-                                        return [$expense->id => "{$expense->expense_date->format('d/m/Y')} - {$expense->amount}€ - Ticket #{$expense->id}"];
+                                        return [$expense->id => "{$expense->expensed_at->format('d/m/Y')} - {$expense->amount_total}€ - Ticket #{$expense->id} ({$expense->title})"];
                                     });
                             })
                             ->searchable()

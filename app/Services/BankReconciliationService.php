@@ -58,9 +58,9 @@ class BankReconciliationService
         $targetAmount = abs($transaction->amount);
         $transactionDate = Carbon::parse($transaction->transaction_date);
 
-        return Expense::where('reconciliation_status', ReconciliationStatus::PENDING)
-            ->where('amount', $targetAmount) // Montant strict
-            ->whereBetween('expense_date', [
+        return Expense::where('reconciliation_status', ReconciliationStatus::Pending)
+            ->where('amount_total', $targetAmount) // Montant strict
+            ->whereBetween('expensed_at', [
                 $transactionDate->copy()->subDays(3)->format('Y-m-d'), // Dépense max 3 jours avant le passage en banque
                 $transactionDate->copy()->addDay()->format('Y-m-d'),    // Dépense saisie exceptionnellement 1 jour après
             ])

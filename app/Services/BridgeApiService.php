@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class BridgeApiService
@@ -25,10 +27,11 @@ class BridgeApiService
     }
 
     /**
-     * Prépare le client HTTP avec les headers obligatoires pour Bridge API v3.
+     * 1. Client HTTP de base (SANS jeton Bearer)
+     * Requis pour s'authentifier et créer des utilisateurs
      * @throws Exception
      */
-    protected function getClient(): PendingRequest
+    protected function getBaseClient(): PendingRequest
     {
         if (empty($this->clientId) || empty($this->clientSecret)) {
             throw new Exception("Les identifiants Bridge (Client ID / Secret) ne sont pas configurés.");
@@ -39,60 +42,153 @@ class BridgeApiService
             'Client-Secret' => $this->clientSecret,
             'Bridge-Version' => $this->bridgeVersion,
             'Accept' => 'application/json',
-        ])->timeout(10); // Timeout de sécurité pour ne pas bloquer l'application
+            'Content-Type' => 'application/json',
+        ])->timeout(10);
     }
 
     /**
-     * Génère le lien de connexion sécurisé (Bridge Connect).
-     * En v3, l'endpoint typique est POST /links ou /connect/items/add
-     * * @return string L'URL de redirection Bridge
+     * 2. Créer ou récupérer l'Utilisateur Système Bridge
+     * BatiStack étant une application d'entreprise, on lie toutes les banques à un profil unique côté Bridge.
+     */
+    public function getSystemBridgeUserUuid(): string
+    {
+        $externalId = 'batistack_system_user';
+
+        return Cache::rememberForever('bridge_system_user_uuid', function () use ($externalId) {
+            $client = $this->getBaseClient();
+
+            // Tentative de création
+            $response = $client->post("{$this->baseUrl}/aggregation/users", [
+                'external_user_id' => $externalId,
+            ]);
+
+            if ($response->successful()) {
+                return $response->json('uuid');
+            }
+
+            // S'il existe déjà (Erreur 409), on récupère la liste pour trouver son UUID
+            $usersResponse = $client->get("{$this->baseUrl}/aggregation/users");
+            if ($usersResponse->successful()) {
+                $users = $usersResponse->json('resources') ?? [];
+                foreach ($users as $u) {
+                    if (($u['external_user_id'] ?? '') === $externalId) {
+                        return $u['uuid'];
+                    }
+                }
+            }
+
+            throw new Exception("Impossible de créer/retrouver l'utilisateur système Bridge : " . $response->body());
+        });
+    }
+
+    /**
+     * 3. Obtenir un jeton d'accès (Bearer Token) pour cet Utilisateur Spécifique
+     */
+    public function getUserAccessToken(): string
+    {
+        $userUuid = $this->getSystemBridgeUserUuid();
+
+        // Le token Bridge dure 2h (7200s), on le met en cache pendant 1h50 (6600s) pour assurer le relai
+        return Cache::remember('bridge_user_access_token', 6600, function () use ($userUuid) {
+            $response = $this->getBaseClient()->post("{$this->baseUrl}/aggregation/authorization/token", [
+                'user_uuid' => $userUuid,
+            ]);
+
+            if ($response->failed()) {
+                throw new Exception("Erreur d'authentification Utilisateur Bridge : " . $response->body());
+            }
+
+            return $response->json('access_token');
+        });
+    }
+
+    /**
+     * 4. Client HTTP final (AVEC jeton Bearer de l'utilisateur)
      * @throws Exception
      */
-    public function createConnectLink(): string
+    protected function getAuthenticatedClient(): PendingRequest
     {
-        $response = $this->getClient()->post("{$this->baseUrl}/connect/items/add");
-
-        if ($response->failed()) {
-            throw new Exception("Impossible de créer le lien Bridge Connect (v3) : " . $response->body());
-        }
-
-        return $response->json('redirect_url');
+        return $this->getBaseClient()->withToken($this->getUserAccessToken());
     }
 
     /**
-     * Récupère les transactions d'un compte spécifique.
-     * * @param string $bridgeAccountId L'ID du compte chez Bridge
-     * @param string|null $since Date au format ISO 8601 (ex: 2023-10-01T00:00:00Z)
-     * @return array La liste des transactions
+     * Génère le lien de connexion sécurisé (Bridge Connect Session)
+     * @throws Exception
+     */
+    public function createConnectLink($localUser = null): string
+    {
+        $callbackUrl = route('bridge.callback');
+        // En V3, l'authentification se fait via le Bearer Token et l'endpoint est /connect-sessions
+        $response = $this->getAuthenticatedClient()->post("{$this->baseUrl}/aggregation/connect-sessions", [
+            // Bridge demande un email obligatoire (DSP2) pour prévenir en cas d'expiration de connexion
+            'user_email' => $localUser->email ?? 'admin@batistack.com',
+            // --- AJOUT CRUCIAL ICI ---
+            // On indique explicitement à Bridge où rediriger l'utilisateur après la sélection de la banque.
+            'callback_url' => $callbackUrl,
+        ]);
+
+        if ($response->failed()) {
+            throw new Exception("Erreur de création de la session Bridge Connect : " . $response->body());
+        }
+
+        // Renvoie l'URL vers laquelle rediriger l'administrateur
+        return $response->json('url');
+    }
+
+    /**
+     * Récupère les transactions du compte bancaire (Appelé par les Jobs nocturnes)
      * @throws Exception
      */
     public function getTransactions(string $bridgeAccountId, ?string $since = null): array
     {
         $query = [];
-
-        // La v3 utilise généralement "updated_since" ou "since" pour filtrer
         if ($since) {
             $query['updated_since'] = $since;
         }
+        $query['account_id'] = $bridgeAccountId;
 
-        $response = $this->getClient()->get("{$this->baseUrl}/accounts/{$bridgeAccountId}/transactions", $query);
+        $response = $this->getAuthenticatedClient()->get("{$this->baseUrl}/aggregation/transactions", $query);
 
         if ($response->failed()) {
-            throw new Exception("Erreur lors de la récupération des transactions Bridge : " . $response->body());
+            throw new Exception("Erreur lors de la récupération des transactions : " . $response->body());
         }
 
-        // Bridge renvoie généralement une structure paginée avec un tableau "resources" ou "data"
         return $response->json('resources') ?? $response->json('data') ?? [];
     }
 
     /**
-     * (Optionnel) Récupère les détails du compte (IBAN, Nom) depuis son ID.
-     * Très utile lors du callback pour enregistrer le bon nom de compte en base.
+     * @throws ConnectionException
+     * @throws Exception
+     */
+    public function getAccountsLists(): array
+    {
+        $response = $this->getAuthenticatedClient()->get("{$this->baseUrl}/aggregation/accounts");
+
+        if ($response->failed()) {
+            throw new Exception("Erreur lors de la récupération des infos des comptes : " . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Récupère les détails d'un compte spécifique (Appelé lors du Callback)
      * @throws Exception
      */
     public function getAccountDetails(string $bridgeAccountId): array
     {
-        $response = $this->getClient()->get("{$this->baseUrl}/accounts/{$bridgeAccountId}");
+        $response = $this->getAuthenticatedClient()->get("{$this->baseUrl}/aggregation/accounts/{$bridgeAccountId}");
+
+        if ($response->failed()) {
+            throw new Exception("Erreur lors de la récupération des infos du compte : " . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    public function getAccountDetailsFromItemId(string $itemId): array
+    {
+        $response = $this->getAuthenticatedClient()->get("{$this->baseUrl}/aggregation/accounts?item_id={$itemId}");
 
         if ($response->failed()) {
             throw new Exception("Erreur lors de la récupération des infos du compte : " . $response->body());

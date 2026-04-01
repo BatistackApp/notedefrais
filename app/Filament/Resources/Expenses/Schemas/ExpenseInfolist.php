@@ -9,6 +9,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use ToneGabes\Filament\Icons\Enums\Phosphor;
 
 class ExpenseInfolist
 {
@@ -22,13 +23,14 @@ class ExpenseInfolist
                         // Colonne de gauche : Détails
                         Group::make([
                             Section::make('Informations générales')
+                                ->icon(Phosphor::Info)
                                 ->schema([
                                     TextEntry::make('title')
                                         ->label('Titre / Marchand')
                                         ->weight('bold'),
                                     TextEntry::make('category.name')
                                         ->label('Catégorie')
-                                        ->icon(fn ($record) => $record->category->icon ?? 'heroicon-o-tag'),
+                                        ->icon(fn($record) => $record->category->icon ?? 'heroicon-o-tag'),
                                     TextEntry::make('expensed_at')
                                         ->label('Date de la dépense')
                                         ->date('d F Y'),
@@ -40,6 +42,7 @@ class ExpenseInfolist
                                 ])->columns(2),
 
                             Section::make('Détails financiers')
+                                ->icon(Phosphor::CurrencyEur)
                                 ->schema([
                                     TextEntry::make('amount_total')
                                         ->label('Montant TTC')
@@ -56,6 +59,7 @@ class ExpenseInfolist
                                 ])->columns(3),
 
                             Section::make('Véhicule & Trajet')
+                                ->icon(Phosphor::Car)
                                 ->schema([
                                     TextEntry::make('vehicle.plaque')
                                         ->label('Véhicule utilisé')
@@ -64,15 +68,17 @@ class ExpenseInfolist
                                     TextEntry::make('odometer')
                                         ->label('Kilométrage au compteur')
                                         ->suffix(' km')
-                                        ->visible(fn ($record) => filled($record->vehicle_id)),
+                                        ->visible(fn($record) => filled($record->vehicle_id)),
                                 ])
-                                ->visible(fn ($record) => filled($record->vehicle_id))
+                                ->visible(fn($record) => filled($record->vehicle_id))
                                 ->columns(2),
                         ])->columnSpan(['md' => 2]),
 
                         // Colonne de droite : Statut et Justificatif
                         Group::make([
                             Section::make('Statut de la demande')
+                                ->icon(Phosphor::TrafficSignal)
+                                ->iconColor(fn ($record) => $record->status->getColor())
                                 ->schema([
                                     TextEntry::make('status')
                                         ->label('État actuel')
@@ -80,10 +86,11 @@ class ExpenseInfolist
                                     TextEntry::make('description')
                                         ->label('Notes / Motif de refus')
                                         ->markdown()
-                                        ->visible(fn ($record) => filled($record->description)),
+                                        ->visible(fn($record) => filled($record->description)),
                                 ]),
 
                             Section::make('Justificatif numérisé')
+                                ->icon(Phosphor::Receipt)
                                 ->schema([
                                     SpatieMediaLibraryImageEntry::make('receipt')
                                         ->label('')
@@ -92,6 +99,23 @@ class ExpenseInfolist
                                             'class' => 'rounded-lg shadow-sm border w-full h-auto',
                                             'alt' => 'Justificatif de dépense',
                                         ]),
+                                ]),
+
+                            Section::make('Rapprochement bancaire')
+                                ->description("Définie le rapprochement avec les écritures bancaires")
+                                ->icon(Phosphor::Bank)
+                                ->columns(1)
+                                ->visible(fn ($record) => isset($record->bank_transaction_id))
+                                ->schema([
+                                    TextEntry::make('bankTransaction.bankAccount.name')
+                                        ->label('Compte Bancaire'),
+
+                                    TextEntry::make('bankTransaction.transaction_date')
+                                        ->label('Date de la transaction bancaire')
+                                        ->date('d/m/Y'),
+
+                                    TextEntry::make('bankTransaction.vendor_name')
+                                        ->label('Désignation sur compte'),
                                 ]),
 
                             Section::make('Archive à Valeur Probatoire (Zéro Papier)')
@@ -118,7 +142,7 @@ class ExpenseInfolist
                                         ->fontFamily('mono') // Police monospace pour mieux lire le hash
                                         ->columnSpanFull(),
                                 ])
-                                ->visible(fn ($record) => $record->digital_seal_status !== DigitalSealStatus::Unsealed)
+                                ->visible(fn($record) => $record->digital_seal_status !== DigitalSealStatus::Unsealed)
                                 ->columns(2),
 
                         ])->columnSpan(['md' => 1]),
