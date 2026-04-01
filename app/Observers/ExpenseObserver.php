@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\ExpenseStatus;
 use App\jobs\ProcessAutoReconciliationJob;
+use App\jobs\SealExpenseAttachmentsJob;
 use App\Models\Expense;
 use App\Services\VehicleService;
 
