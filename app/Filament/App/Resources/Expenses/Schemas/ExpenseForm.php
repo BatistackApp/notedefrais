@@ -5,6 +5,7 @@ namespace App\Filament\App\Resources\Expenses\Schemas;
 use App\Models\Category;
 use App\Models\Vehicle;
 use App\Services\OcrService;
+use App\Services\SiretService;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -65,6 +66,17 @@ class ExpenseForm
                                         $set('vehicle_id', Vehicle::where('plaque', 'like', '%'.$data['vehicle_id'].'%')->first()->id ?? null);
                                         $set('odometer', $data['odometer'] ?? null);
                                         $set('category_id', Category::where('name', 'like', '%'.$data['category_id'].'%')->first()->id ?? null);
+
+                                        $verifSiren = app(SiretService::class)->isStillActive($data['siren']);
+
+                                        if (!$verifSiren) {
+                                            Log::warning('Attention la société du ticket présente une irrégularité entre son nom et le siret !: '.$data['siren']);
+                                            Notification::make()
+                                                ->warning()
+                                                ->title("Vérification Légal")
+                                                ->body("Attention la société du ticket présente une irrégularité entre son nom et le siret !")
+                                                ->send();
+                                        }
 
                                         Notification::make()
                                             ->title('Analyse terminée')

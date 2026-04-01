@@ -27,6 +27,7 @@ class OcrService
                 - vehicle_id (Recherche si tu voie une plaque d'immatriculation)
                 - odometer (Recherche une série de chiffre manuscrite avec 'km' à la fin et affiche la en nombre entier)
                 - category_id (Catégorie de frais en français)
+                - siren (Détecte et affiche le Siret/Siren de l'entreprise)
 
                 Si une information est manquante, retourne null pour ce champ.";
 

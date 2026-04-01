@@ -54,4 +54,9 @@ return [
         'redirect_uri' => env('BRIDGE_CALLBACK_URL'),
         'api_url' => env('BRIDGE_API_URL', 'https://api.bridgeapi.io/v3/'),
     ],
+
+    'siren' => [
+        'api_key' => env('SIREN_API_KEY'),
+        'base_url' => 'https://api.insee.fr/api-sirene/3.11',
+    ],
 ];
