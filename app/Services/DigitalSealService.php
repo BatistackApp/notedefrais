@@ -15,7 +15,7 @@ class DigitalSealService
     public function sealExpense(Expense $expense): bool
     {
         // On ne scelle que si ce n'est pas déjà fait
-        if ($expense->digital_seal_status === DigitalSealStatus::SEALED) {
+        if ($expense->digital_seal_status === DigitalSealStatus::Sealed) {
             return true;
         }
 
@@ -68,7 +68,7 @@ class DigitalSealService
 
         if (! $isValid) {
             // Le fichier a été compromis ! On déclenche l'alerte.
-            $expense->update(['digital_seal_status' => DigitalSealStatus::COMPROMISED]);
+            $expense->update(['digital_seal_status' => DigitalSealStatus::Compromised]);
             return false;
         }
 

@@ -47,7 +47,7 @@ class ExpensesTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make()
-                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed)
+                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed->value)
                         ->visible(fn (Expense $record): bool => in_array($record->status, [
                             ExpenseStatus::DRAFT,
                             ExpenseStatus::REJECTED,
@@ -55,14 +55,7 @@ class ExpensesTable
                 ]),
             ])
             ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
-                    ForceDeleteBulkAction::make()
-                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
-                    RestoreBulkAction::make()
-                        ->hidden(fn ($record) => $record->digital_seal_status === DigitalSealStatus::Sealed),
-                ]),
+
             ]);
     }
 }

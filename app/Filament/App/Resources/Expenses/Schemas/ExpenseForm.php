@@ -97,6 +97,7 @@ class ExpenseForm
                         Select::make('user_id')
                             ->label('Salarié')
                             ->relationship('user', 'name')
+                            ->default(fn ($record) => \Auth::user()->id ?? '')
                             ->searchable()
                             ->preload()
                             ->required(),
